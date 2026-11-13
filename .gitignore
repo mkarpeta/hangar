@@ -1,0 +1,4 @@
+.DS_Store
+*.tmp.jpg
+# Local helper for regenerating README screenshots (not part of the Spoon)
+tools/

@@ -1,0 +1,313 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: rgb(30, 30, 32);
+    --footer: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.09);
+    --divider: rgba(255, 255, 255, 0.07);
+    --text: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.48);
+    --faint: rgba(255, 255, 255, 0.05);
+    --sel: rgba(255, 255, 255, 0.09);
+    --sel-border: rgba(255, 255, 255, 0.14);
+    --kbd-bg: rgba(255, 255, 255, 0.09);
+    --kbd-text: rgba(255, 255, 255, 0.70);
+    --kbd-sel-bg: rgba(255, 255, 255, 0.92);
+    --kbd-sel-text: rgba(0, 0, 0, 0.85);
+    --accent: #ff6363;
+    --shadow: 0 16px 36px rgba(0, 0, 0, 0.40), 0 0 0 0.5px rgba(0, 0, 0, 0.6);
+    --tile-w: 212px;
+    --columns: 5;
+    --thumb-h: 132px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: rgb(250, 250, 250);
+      --footer: rgba(0, 0, 0, 0.025);
+      --border: rgba(0, 0, 0, 0.10);
+      --divider: rgba(0, 0, 0, 0.07);
+      --text: rgba(0, 0, 0, 0.86);
+      --muted: rgba(0, 0, 0, 0.48);
+      --faint: rgba(0, 0, 0, 0.035);
+      --sel: rgba(0, 0, 0, 0.06);
+      --sel-border: rgba(0, 0, 0, 0.10);
+      --kbd-bg: rgba(0, 0, 0, 0.06);
+      --kbd-text: rgba(0, 0, 0, 0.60);
+      --kbd-sel-bg: rgba(0, 0, 0, 0.82);
+      --kbd-sel-text: rgba(255, 255, 255, 0.95);
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.20), 0 0 0 0.5px rgba(0, 0, 0, 0.18);
+    }
+  }
+  :root[data-theme="light"] {
+      --bg: rgb(250, 250, 250);
+      --footer: rgba(0, 0, 0, 0.025);
+      --border: rgba(0, 0, 0, 0.10);
+      --divider: rgba(0, 0, 0, 0.07);
+      --text: rgba(0, 0, 0, 0.86);
+      --muted: rgba(0, 0, 0, 0.48);
+      --faint: rgba(0, 0, 0, 0.035);
+      --sel: rgba(0, 0, 0, 0.06);
+      --sel-border: rgba(0, 0, 0, 0.10);
+      --kbd-bg: rgba(0, 0, 0, 0.06);
+      --kbd-text: rgba(0, 0, 0, 0.60);
+      --kbd-sel-bg: rgba(0, 0, 0, 0.82);
+      --kbd-sel-text: rgba(255, 255, 255, 0.95);
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.20), 0 0 0 0.5px rgba(0, 0, 0, 0.18);
+    }
+
+  html, body {
+    margin: 0;
+    background: transparent;
+    color: var(--text);
+    font: 13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+    overflow: hidden;
+  }
+
+  .panel {
+    margin: 56px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: inline-block;
+  }
+
+  /* Header: Raycast search-bar look */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 50px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .header .glyph {
+    width: 18px; height: 18px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+  }
+  .header .glyph i { background: var(--muted); border-radius: 2px; }
+  .header .title { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+  .header .spacer { flex: 1; }
+  .header .current { color: var(--muted); font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), var(--tile-w));
+    gap: 6px;
+    padding: 10px;
+  }
+  .tile {
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: background 80ms ease-out;
+  }
+  .tile:hover { background: var(--faint); }
+  .tile.sel { background: var(--sel); border-color: var(--sel-border); }
+  .tile.empty .thumb, .tile.empty .meta { opacity: 0.45; }
+
+  .thumb {
+    position: relative;
+    height: var(--thumb-h);
+    border-radius: 7px;
+    background-color: var(--faint);
+    background-size: cover;
+    background-position: top left;
+    border: 1px solid var(--divider);
+    overflow: hidden;
+  }
+  .thumb .placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    color: var(--muted); font-size: 12px;
+  }
+  .thumb .placeholder img { width: 34px; height: 34px; }
+  .tile.sel .thumb { box-shadow: 0 0 0 2px var(--accent); border-color: transparent; }
+  .tile .here { display: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+  .tile.cur .here { display: block; }
+
+  .meta { margin-top: 8px; }
+  .row1 { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+  .count { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .row2 { display: flex; align-items: center; gap: 4px; height: 18px; margin-top: 4px; min-width: 0; }
+  .row2 img { width: 16px; height: 16px; flex: none; }
+  .row2 .apps { color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 3px; }
+
+  kbd {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+    border-radius: 4px;
+    background: var(--kbd-bg); color: var(--kbd-text);
+    font: 500 11px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile.sel kbd.num { background: var(--kbd-sel-bg); color: var(--kbd-sel-text); }
+
+  /* Footer: Raycast action bar */
+  .footer {
+    display: flex; align-items: center; gap: 10px;
+    height: 40px; padding: 0 12px 0 14px;
+    border-top: 1px solid var(--divider);
+    background: var(--footer);
+    color: var(--muted); font-size: 12px;
+  }
+  .footer .brand { display: flex; align-items: center; gap: 8px; }
+  .footer .logo {
+    width: 18px; height: 18px; border-radius: 5px;
+    background: linear-gradient(135deg, #ff6363, #ff9a5a);
+  }
+  .footer .spacer { flex: 1; }
+  .footer .action { display: flex; align-items: center; gap: 5px; color: var(--text); }
+  .footer .action span { margin-right: 2px; }
+  .footer .sep { width: 1px; height: 16px; background: var(--divider); }
+  .footer .action.dim { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="panel" id="panel">
+  <div class="header" id="header">
+    <div class="glyph"><i></i><i></i><i></i><i></i></div>
+    <div class="title" id="title"></div>
+    <div class="spacer"></div>
+    <div class="current" id="current"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="footer" id="footer">
+    <div class="brand"><div class="logo"></div>Hangar</div>
+    <div class="spacer"></div>
+    <div class="action"><span data-s="select"></span><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd></div>
+    <div class="sep"></div>
+    <div class="action"><span data-s="go"></span><kbd id="releaseKey"></kbd></div>
+    <div class="sep"></div>
+    <div class="action dim"><span data-s="jump"></span><kbd id="jumpKeys"></kbd></div>
+    <div class="sep"></div>
+    <div class="action dim"><span data-s="cancel"></span><kbd>esc</kbd></div>
+  </div>
+</div>
+
+<script>
+  const thumbs = {};   // workspace -> data URL (sent only when it changes)
+  const icons = {};    // bundle id -> data URL (sent once)
+  let S = {};          // UI strings
+
+  function post(msg) {
+    try { window.webkit.messageHandlers.hangar.postMessage(msg); } catch (e) {}
+  }
+
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function iconImg(bid) {
+    if (!icons[bid]) return null;
+    const img = el("img");
+    img.src = icons[bid];
+    return img;
+  }
+
+  function select(ws) {
+    document.querySelectorAll(".tile").forEach(t => t.classList.toggle("sel", t.dataset.ws === ws));
+  }
+
+  function applyUi(ui, order) {
+    S = ui.strings || {};
+    const root = document.documentElement;
+    root.dataset.theme = ui.theme || "auto";
+    if (ui.accent) root.style.setProperty("--accent", ui.accent);
+    document.getElementById("header").style.display = ui.header === false ? "none" : "";
+    document.getElementById("footer").style.display = ui.footer === false ? "none" : "";
+    document.getElementById("title").textContent = S.title || "Workspaces";
+    document.querySelectorAll("[data-s]").forEach(n => { n.textContent = S[n.dataset.s] || ""; });
+    document.getElementById("releaseKey").textContent = `${S.release || "release"} ${ui.keyLabel || ""}`.trim();
+    const keys = order.filter(ws => ws.length === 1);
+    const digits = keys.filter(k => /[0-9]/.test(k)).sort();
+    let label = keys.join(" ") || "—";
+    if (digits.length > 2 && digits.length === keys.length) label = `${digits[0]}–${digits[digits.length - 1]}`;
+    else if (keys.length > 2) label = `${keys[0]}–${keys[keys.length - 1]}`;
+    document.getElementById("jumpKeys").textContent = label;
+  }
+
+  function render(d) {
+    const order = d.order || [];
+    const root = document.documentElement.style;
+    if (d.tileW) root.setProperty("--tile-w", d.tileW + "px");
+    if (d.thumbH) root.setProperty("--thumb-h", d.thumbH + "px");
+    root.setProperty("--columns", Math.max(1, Math.min(d.columns || 5, order.length || 1)));
+    applyUi(d.ui || {}, order);
+    Object.assign(thumbs, d.thumbs || {});
+    Object.assign(icons, d.icons || {});
+
+    const grid = document.getElementById("grid");
+    grid.textContent = "";
+
+    for (const ws of order) {
+      const w = (d.workspaces || {})[ws] || { name: "", apps: [], windows: 0 };
+      const tile = el("div", "tile");
+      tile.dataset.ws = ws;
+      if (ws === (d.selected || d.focused)) tile.classList.add("sel");
+      if (ws === d.focused) tile.classList.add("cur");
+      if (!w.windows) tile.classList.add("empty");
+      tile.addEventListener("click", () => post({ type: "switch", ws }));
+
+      const thumb = el("div", "thumb");
+      if (thumbs[ws] && w.windows) {
+        thumb.style.backgroundImage = `url("${thumbs[ws]}")`;
+      } else {
+        const ph = el("div", "placeholder");
+        if (w.windows) {
+          w.apps.slice(0, 3).forEach(a => { const i = iconImg(a.bid); if (i) ph.appendChild(i); });
+          if (!ph.childNodes.length) ph.textContent = S.noPreview || "";
+        } else {
+          ph.textContent = S.empty || "";
+        }
+        thumb.appendChild(ph);
+      }
+      tile.appendChild(thumb);
+
+      const meta = el("div", "meta");
+      const row1 = el("div", "row1");
+      row1.appendChild(el("kbd", "num", ws));
+      row1.appendChild(el("div", "name", w.name || `${S.workspace || "Workspace"} ${ws}`));
+      row1.appendChild(el("div", "here"));
+      if (w.windows) row1.appendChild(el("div", "count", String(w.windows)));
+      meta.appendChild(row1);
+
+      const row2 = el("div", "row2");
+      w.apps.slice(0, 5).forEach(a => { const i = iconImg(a.bid); if (i) row2.appendChild(i); });
+      row2.appendChild(el("div", "apps", w.apps.map(a => a.name).join(", ")));
+      meta.appendChild(row2);
+      tile.appendChild(meta);
+
+      grid.appendChild(tile);
+    }
+
+    const cur = document.getElementById("current");
+    cur.textContent = "";
+    if (d.focused != null) {
+      const fw = (d.workspaces || {})[d.focused];
+      cur.appendChild(document.createTextNode(S.current || ""));
+      cur.appendChild(el("kbd", null, d.focused));
+      cur.appendChild(document.createTextNode((fw && fw.name) || ""));
+    }
+
+    const p = document.getElementById("panel").getBoundingClientRect();
+    post({ type: "size", w: Math.ceil(p.width + 112), h: Math.ceil(p.height + 112) });
+  }
+</script>
+</body>
+</html>
